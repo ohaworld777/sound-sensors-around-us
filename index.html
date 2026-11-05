@@ -93,6 +93,16 @@ footer{position:fixed;left:0;right:0;bottom:0;height:var(--foot-h);display:flex;
 #dots{display:flex;gap:5px;align-items:center;max-width:46vw;overflow:hidden}
 #dots i{width:7px;height:7px;border-radius:50%;background:#c9d3e6;flex:none;transition:all .25s}
 #dots i.on{width:22px;border-radius:5px;background:var(--brand)}
+#dots{position:relative;cursor:grab;padding:12px 6px;touch-action:none;user-select:none;overflow:visible}
+#dots.drag{cursor:grabbing}
+@media (max-width:1000px){#dots{gap:3px}}
+#dots i{position:relative}
+#dots i.hov{background:var(--brand-2);transform:scale(1.5)}
+#dots i.on.hov{transform:none}
+#dtip{position:absolute;bottom:calc(100% + 2px);left:0;transform:translateX(-50%);background:#14213f;color:#fff;font-size:13px;font-weight:700;white-space:nowrap;padding:6px 10px;border-radius:8px;pointer-events:none;opacity:0;transition:opacity .15s;max-width:60vw;overflow:hidden;text-overflow:ellipsis;z-index:5}
+#dtip:after{content:"";position:absolute;left:50%;top:100%;margin-left:-5px;border:5px solid transparent;border-top-color:#14213f}
+#dots.drag #dtip,#dots.tipon #dtip{opacity:1}
+
 
 /* ---------- slideshow mode ---------- */
 .pill.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
@@ -185,6 +195,23 @@ function toggleMenu(v){const o=v===undefined?!menu.classList.contains('open'):v;
 menuBtn.onclick=e=>{e.stopPropagation();toggleMenu();};
 // dots
 const dots=document.getElementById('dots'); P.forEach(()=>dots.appendChild(document.createElement('i')));
+// dots: 드래그·클릭으로 페이지 이동
+(function(){
+  const tip=document.createElement('span'); tip.id='dtip'; dots.appendChild(tip);
+  const items=()=>[...dots.querySelectorAll('i')];
+  let dragging=false, hk=-1;
+  function idxAt(x){ let best=0,bd=1e9; items().forEach((d,k)=>{const r=d.getBoundingClientRect(); const c=r.left+r.width/2; const dd=Math.abs(x-c); if(dd<bd){bd=dd;best=k;}}); return best; }
+  function show(k){ hk=k; const it=items(); it.forEach((d,j)=>d.classList.toggle('hov',j===k)); const d=it[k]; if(!d) return;
+    const p=P[k]; tip.textContent=`${k+1} / ${P.length} · ${(p.label?p.label+' · ':'')}${p.title||''}`;
+    const dr=dots.getBoundingClientRect(), r=d.getBoundingClientRect(); tip.style.left=(r.left+r.width/2-dr.left)+'px'; }
+  function clear(){ items().forEach(d=>d.classList.remove('hov')); dots.classList.remove('drag','tipon'); hk=-1; }
+  dots.addEventListener('pointerdown',e=>{ dragging=true; dots.setPointerCapture(e.pointerId); dots.classList.add('drag'); show(idxAt(e.clientX)); e.preventDefault(); });
+  dots.addEventListener('pointermove',e=>{ if(dragging) show(idxAt(e.clientX)); else if(e.pointerType==='mouse'){ dots.classList.add('tipon'); show(idxAt(e.clientX)); } });
+  dots.addEventListener('pointerup',e=>{ if(!dragging) return; dragging=false; const k=idxAt(e.clientX); clear(); if(k!==i) go(k); });
+  dots.addEventListener('pointercancel',()=>{ dragging=false; clear(); });
+  dots.addEventListener('pointerleave',()=>{ if(!dragging) clear(); });
+})();
+
 
 function mark(text){ let h=esc(text); const g=(P[i].gloss||[]); g.forEach((t,k)=>{ if(!t.key||t.key.length<2) return; const e=esc(t.key); const idx=h.indexOf(e); if(idx>=0 && !h.slice(0,idx).includes('<button')) h=h.slice(0,idx)+`<button class="term" data-g="${k}">${e}</button>`+h.slice(idx+e.length); }); return h; }
 function notesRow(){ const p=P[i]; const g=p.gloss||[]; if(!g.length && !p.script) return '';
@@ -213,8 +240,8 @@ function render(){
   }
   document.getElementById('count').textContent=`${i+1} / ${P.length}`;
   document.getElementById('progress').style.width=((i+1)/P.length*100)+'%';
-  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
-  const on=dots.children[i]; if(on) dots.scrollLeft=on.offsetLeft-dots.clientWidth/2;
+  [...dots.querySelectorAll('i')].forEach((d,k)=>d.classList.toggle('on',k===i));
+  const on=dots.querySelectorAll('i')[i]; if(on) dots.scrollLeft=on.offsetLeft-dots.clientWidth/2;
   document.getElementById('prev').disabled=i===0; document.getElementById('next').disabled=i===P.length-1;
   [...ml.children].forEach((b,k)=>b.classList.toggle('cur',k===i));
   if(typeof showSync==='function') showSync();
