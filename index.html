@@ -383,5 +383,16 @@ if(typeof render==='function'&&i===P.length-1)render();})();</script><!--/XLINK-
  // 교구 제작 영상 쪽: 지금 단계 막대에 공유
  document.addEventListener('click',e=>{const b=e.target.closest('#kvShare');if(!b)return;e.stopPropagation();const p=P[i];const t=Math.floor(window.kvT||0);const u=p.url.replace(/#.*$/,'')+(t>3?'#t='+t+'s':'');ksShare(u,p.title,(t>3?'지금 장면('+Math.floor(t/60)+':'+String(t%60).padStart(2,'0')+')부터 재생되는 주소예요':'제작 영상 주소예요'));},true);
  const _r=window.render;if(typeof _r==='function'){window.render=function(){_r();const now=document.querySelector('.kv .now');if(now&&!now.querySelector('#kvShare')){const b=document.createElement('button');b.id='kvShare';b.textContent='🔗 공유';now.appendChild(b);}};}
-})();</script><!--/VSHARE--></body>
+})();</script><!--/VSHARE--><!--SWIPE--><script>
+(function(){let x0=0,y0=0,t0=0,ok=false;
+ const BLOCK='#dots,#progress,input,textarea,select,button,a,[data-noswipe],.kbmask,.ksm,#pop,.tzm,.kvm,#kvm,#menu';
+ const OPEN='#pop:not([hidden]),.ksm.on,.kbmask.on,.tzm.on,.kvm.on,#kvm.on,#menu.open,.mask.on';
+ document.addEventListener('touchstart',e=>{ok=false;if(e.touches.length!==1)return;
+  if(e.target.closest&&e.target.closest(BLOCK))return; if(document.querySelector(OPEN))return;
+  const t=e.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();ok=true;},{passive:true});
+ document.addEventListener('touchmove',e=>{if(e.touches.length!==1)ok=false;},{passive:true});
+ document.addEventListener('touchend',e=>{if(!ok)return;ok=false;const t=e.changedTouches[0];const dx=t.clientX-x0,dy=t.clientY-y0;
+  if(Date.now()-t0>800||Math.abs(dx)<60||Math.abs(dx)<Math.abs(dy)*1.4)return;
+  if(dx<0){if(typeof next==='function')next();}else{if(typeof prev==='function')prev();}},{passive:true});
+})();</script><!--/SWIPE--></body>
 </html>
